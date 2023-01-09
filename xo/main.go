@@ -36,8 +36,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-
-	args.Loader.SayHello()
+	
+	err = args.Loader.LoadSchema(args)
 
 }
 
