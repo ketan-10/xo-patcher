@@ -14,6 +14,11 @@ import (
 )
 
 func main() {
+	process()
+}
+
+func process() {
+
 	var err error
 	fmt.Println("Started")
 
@@ -36,9 +41,38 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	
+
 	err = args.Loader.LoadSchema(args)
 
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	// create files
+
+	generateFiles(args)
+}
+
+func generateFiles(args *internal.Args) {
+
+	for _, gen := range args.Generated {
+		dirName := args.GeneratedDir + "/" + gen.TemplateType.String()
+		if _, err := os.Stat(dirName); os.IsNotExist(err) {
+			os.MkdirAll(dirName, os.ModeDir)
+		}
+		file, err := os.Create(dirName + "/" + gen.FileName + "")
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		_, err = file.Write(gen.Buffer.Bytes())
+		if err != nil {
+			panic(err)
+		}
+
+	}
 }
 
 func openDB(args *internal.Args) error {

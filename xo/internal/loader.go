@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ketan-10/xo-patcher/xo/loaders/models"
+	"github.com/ketan-10/xo-patcher/xo/templates"
 )
 
 // The loader interface
@@ -76,7 +77,10 @@ func (lt *LoaderImp) loadEnums(args *Args) error {
 	}
 
 	for _, enum := range allEnumDTO {
-		args.ExecuteTemplate("mysql.enum.go.tpl", enum)
+		err := args.ExecuteTemplate(templates.ENUM, fmt.Sprintf("%s_%s", enum.TableName, enum.ColumnName), enum)
+		if err != nil {
+			return err
+		}
 	}
 
 	// fmt.Printf(""enums)
