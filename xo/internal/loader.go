@@ -21,6 +21,8 @@ type LoaderImp struct {
 	EnumList      func(db models.XODB, databaseName string) ([]*models.Enum, error)
 	DatabaseName  func(db models.XODB) (string, error)
 	EnumValueList func(db models.XODB, databaseName string, tableName string, columnName string) (string, error)
+	TableList     func(db models.XODB, databaseName string) ([]string, error)
+	ColumList     func(db models.XODB, databaseName string, tableName string) ([]*models.Column, error)
 }
 
 // Entry point to load everything
@@ -38,6 +40,11 @@ func (lt *LoaderImp) LoadSchema(args *Args) error {
 		return err
 	}
 
+	err = lt.loadTables(args)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -46,6 +53,39 @@ func (lt *LoaderImp) loadDatabaseName(args *Args) (string, error) {
 		return "", fmt.Errorf("schema name loader is not implemented for %s", args.LoaderType.String())
 	}
 	return lt.DatabaseName(args.DB)
+}
+
+type TableDTO struct {
+	TableName string
+	Columns   []*models.Column
+}
+
+func (lt *LoaderImp) loadTables(args *Args) error {
+	tables, err := lt.TableList(args.DB, args.DatabaseName)
+	if err != nil {
+		return err
+	}
+	var allTableDTO []*TableDTO
+
+	for _, table := range tables {
+		columns, err := lt.ColumList(args.DB, args.DatabaseName, table)
+		if err != nil {
+			return err
+		}
+		allTableDTO = append(allTableDTO, &TableDTO{
+			TableName: table,
+			Columns:   columns,
+		})
+	}
+
+	for _, table := range allTableDTO {
+		err := args.ExecuteTemplate(templates.TABLE, table.TableName, table)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
 }
 
 type EnumDTO struct {
