@@ -5,6 +5,7 @@ type TemplateType uint16
 const (
 	ENUM TemplateType = iota
 	TABLE
+	REPO
 )
 
 func (tt *TemplateType) String() string {
@@ -13,6 +14,8 @@ func (tt *TemplateType) String() string {
 		return "enum"
 	case TABLE: 
 		return "table"
+	case REPO:
+		return "repo"
 	}
 	return ""
 }

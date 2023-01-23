@@ -18,11 +18,13 @@ var AllLoaders = map[LoaderType]ILoader{}
 // The loader implementation
 // Drivers like mysql will create object for this.
 type LoaderImp struct {
-	EnumList      func(db models.XODB, databaseName string) ([]*models.Enum, error)
-	DatabaseName  func(db models.XODB) (string, error)
-	EnumValueList func(db models.XODB, databaseName string, tableName string, columnName string) (string, error)
-	TableList     func(db models.XODB, databaseName string) ([]string, error)
-	ColumList     func(db models.XODB, databaseName string, tableName string) ([]*models.Column, error)
+	EnumList        func(db models.XODB, databaseName string) ([]*models.Enum, error)
+	DatabaseName    func(db models.XODB) (string, error)
+	EnumValueList   func(db models.XODB, databaseName string, tableName string, columnName string) (string, error)
+	TableList       func(db models.XODB, databaseName string) ([]string, error)
+	ColumList       func(db models.XODB, databaseName string, tableName string) ([]*models.Column, error)
+	IndexList       func(db models.XODB, databaseName string, tableName string) ([]*models.Index, error)
+	ForeignKeysList func(db models.XODB, databaseName string, tableName string) ([]*models.ForeignKey, error)
 }
 
 // Entry point to load everything
@@ -40,7 +42,12 @@ func (lt *LoaderImp) LoadSchema(args *Args) error {
 		return err
 	}
 
-	err = lt.loadTables(args)
+	tables, err := lt.loadTables(args)
+	if err != nil {
+		return err
+	}
+
+	err = lt.loadRepository(args, tables)
 	if err != nil {
 		return err
 	}
@@ -55,22 +62,55 @@ func (lt *LoaderImp) loadDatabaseName(args *Args) (string, error) {
 	return lt.DatabaseName(args.DB)
 }
 
+type TableRelation struct {
+	Table       *TableDTO
+	Indexes     []*models.Index
+	ForeignKeys []*models.ForeignKey
+}
+
+func (lt *LoaderImp) loadRepository(args *Args, tables []*TableDTO) error {
+
+	res := []*TableRelation{}
+
+	for _, table := range tables {
+		indexes, err := lt.IndexList(args.DB, args.DatabaseName, table.TableName)
+		if err != nil {
+			return err
+		}
+		foreignKeys, err := lt.ForeignKeysList(args.DB, args.DatabaseName, table.TableName)
+		if err != nil {
+			return err
+		}
+		tableRelation := &TableRelation{
+			Table:       table,
+			Indexes:     indexes,
+			ForeignKeys: foreignKeys,
+		}
+		err = args.ExecuteTemplate(templates.REPO, table.TableName+"_repository", tableRelation)
+		if err != nil {
+			return err
+		}
+		res = append(res, tableRelation)
+	}
+	return nil
+}
+
 type TableDTO struct {
 	TableName string
 	Columns   []*models.Column
 }
 
-func (lt *LoaderImp) loadTables(args *Args) error {
+func (lt *LoaderImp) loadTables(args *Args) ([]*TableDTO, error) {
 	tables, err := lt.TableList(args.DB, args.DatabaseName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var allTableDTO []*TableDTO
 
 	for _, table := range tables {
 		columns, err := lt.ColumList(args.DB, args.DatabaseName, table)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		allTableDTO = append(allTableDTO, &TableDTO{
 			TableName: table,
@@ -81,10 +121,10 @@ func (lt *LoaderImp) loadTables(args *Args) error {
 	for _, table := range allTableDTO {
 		err := args.ExecuteTemplate(templates.TABLE, table.TableName, table)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return allTableDTO, nil
 
 }
 

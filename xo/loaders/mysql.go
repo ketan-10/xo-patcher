@@ -17,5 +17,7 @@ func init() {
 		EnumValueList: models.MysqlEnumValueList,
 		TableList: models.MySqlTables,
 		ColumList: models.MySqlColumns,
+		IndexList: models.MySqlIndexes,
+		ForeignKeysList: models.MySqlForeignKeys,
 	}
 }
