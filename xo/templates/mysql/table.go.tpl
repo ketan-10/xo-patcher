@@ -3,7 +3,11 @@
 
 type {{ $tableNameCamel }} struct {
 {{- range .Columns}}
+{{- if and .IsEnum (eq .NotNullable false) }}
+    {{ camelCase .ColumnName }} *{{ .GoType }} `json"{{.ColumnName}}" db:"{{.ColumnName}}"`
+{{ else }}
     {{ camelCase .ColumnName }} {{ .GoType }} `json"{{.ColumnName}}" db:"{{.ColumnName}}"`
+{{- end }}
 {{- end }}
 }
 
@@ -90,16 +94,16 @@ type {{ $tableNameCamel }}Update struct {
 // helper functions
 func (u *{{ $tableNameCamel }}Update) To{{ $tableNameCamel }}Create() (res {{ $tableNameCamel }}Create, err error) {
 {{- range .Columns}}
-{{ if eq .IsGenerated false}}
+{{- if eq .IsGenerated false }}
     if {{ camelCase .ColumnName }} != nil {
         res.{{ camelCase .ColumnName }} = *u.{{ camelCase .ColumnName }}
-    } 
-    {{ if eq .NotNullable true }} 
-    else {
-        return res, errors.New("Value Can not be NULL")
     }
-    {{ end }}
-{{ end }}
+    {{- if eq .NotNullable true -}} 
+    {{" "}}else {
+        return res, errors.New("Value Can not be NULL")
+    } 
+    {{- end -}}
+{{- end -}}
 {{- end }}
 }
 
@@ -108,26 +112,25 @@ type List{{ $tableNameCamel }} struct {
     Data []{{ $tableNameCamel }}
 }
 
-{{ range .Columns }}
-        {{- if and .IsEnum (ne .NotNullable true) }}
-            func (l *List{{ $tableNameCamel }}) GetAll{{ .ColumnName }}() []*{{ .GoType }} {
-                var res []*{{ .GoType }}
-                for _, item := range l.Data {
-                    res = append(res, item.{{ .ColumnName }})
-                }
-                return res
-            }
-        {{- else }}
-             func (l *List{{ $tableNameCamel }}) GetAll{{ .ColumnName }}() []{{ .GoType }} {
-                 var res []{{ retype .Type }}
-                 for _, item := range l.Data {
-                     res = append(res, item.{{ .ColumnName }})
-                 }
-                 return res
-             }
-        {{- end }}
+{{- range .Columns }}
+    {{- if and .IsEnum (eq .NotNullable false) }}
+func (l *List{{ $tableNameCamel }}) GetAll{{ camelCase .ColumnName }}() []*{{ .GoType }} {
+    var res []*{{ .GoType }}
+    for _, item := range l.Data {
+        res = append(res, item.{{ camelCase .ColumnName }})
+    }
+    return res
+}
+    {{- else }}
+func (l *List{{ $tableNameCamel }}) GetAll{{ camelCase .ColumnName }}() []{{ .GoType }} {
+    var res []{{ .GoType }}
+    for _, item := range l.Data {
+        res = append(res, item.{{ camelCase .ColumnName }})
+    }
+    return res
+}
+    {{- end }}
 {{- end }}
-
 
 func (l *List{{ $tableNameCamel }}) Filter(f func (item {{ $tableNameCamel }}) bool) (res List{{ $tableNameCamel }}) {
     for _, item := range l.Data {
