@@ -23,7 +23,7 @@ type Args struct {
 func GetDefaultArgs() *Args {
 	return &Args{
 		GeneratedDir: "xo_gen",
-		DBC:          "",
+		DBC:          "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@127.0.0.1:3306/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=true",
 	}
 }
 

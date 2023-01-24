@@ -47,6 +47,8 @@ func (lt *LoaderImp) LoadSchema(args *Args) error {
 		return err
 	}
 
+	fmt.Println("Loading repo..")
+
 	err = lt.loadRepository(args, tables)
 	if err != nil {
 		return err
