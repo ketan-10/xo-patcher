@@ -20,10 +20,10 @@ type Args struct {
 	Generated    []*GeneratedTemplate `arg:"-"`
 }
 
-func GetDefaultArgs() *Args {
+func GetDefaultArgs(connection string) *Args {
 	return &Args{
 		GeneratedDir: "xo_gen",
-		DBC:          "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@127.0.0.1:3306/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=true",
+		DBC:          connection,
 	}
 }
 
@@ -43,7 +43,7 @@ func (arg *Args) ExecuteTemplate(tt templates.TemplateType, fileName string, obj
 	}
 
 	// read template file
-	templateFileLocation := "templates/" + arg.LoaderType.String() + "/" + tt.String() + ".go.tpl"
+	templateFileLocation := "./templates/" + arg.LoaderType.String() + "/" + tt.String() + ".go.tpl"
 	file, err := os.ReadFile(templateFileLocation)
 	if err != nil {
 		return err

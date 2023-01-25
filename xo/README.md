@@ -17,3 +17,20 @@ loader: a generic loader object and single implementation
 
 dir/loaders:
 specific loaders like mysql
+
+- Can not import main pack into another package
+  -  have to create cmd package 
+eg of fail case 
+```go
+package main
+
+import (
+	xo "github.com/ketan-10/xo-patcher/xo"
+)
+
+func main() {
+	xo.Execute("")
+}
+
+```
+https://stackoverflow.com/questions/44420826/access-main-package-from-other-package
