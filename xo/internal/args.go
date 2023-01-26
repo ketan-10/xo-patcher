@@ -3,8 +3,9 @@ package internal
 import (
 	"bytes"
 	"database/sql"
-	"os"
 	"text/template"
+
+	tplbin "github.com/ketan-10/xo-patcher/xo/templates/go_binddata_gen"
 
 	"github.com/ketan-10/xo-patcher/xo/templates"
 )
@@ -43,8 +44,8 @@ func (arg *Args) ExecuteTemplate(tt templates.TemplateType, fileName string, obj
 	}
 
 	// read template file
-	templateFileLocation := "./templates/" + arg.LoaderType.String() + "/" + tt.String() + ".go.tpl"
-	file, err := os.ReadFile(templateFileLocation)
+	templateFileLocation := "templates/" + arg.LoaderType.String() + "/" + tt.String() + ".go.tpl"
+	file, err := tplbin.Asset(templateFileLocation)
 	if err != nil {
 		return err
 	}
