@@ -1,5 +1,11 @@
 {{- $tableNameCamel := camelCase .TableName -}}
+package table
 
+import (
+    sq "github.com/elgris/sqrl"
+    "github.com/jmoiron/sqlx"
+    "github.com/pkg/errors"
+)
 
 type {{ $tableNameCamel }} struct {
 {{- range .Columns}}

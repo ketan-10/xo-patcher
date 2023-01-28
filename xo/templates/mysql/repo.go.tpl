@@ -1,5 +1,12 @@
 {{- $tableNameCamel := camelCase .Table.TableName -}}
 {{- $shortName := shortName $tableNameCamel -}}
+package repo
+
+import (
+    sq "github.com/elgris/sqrl"
+    "github.com/jmoiron/sqlx"
+    "github.com/pkg/errors"
+)
 
 type I{{ $tableNameCamel }}Repository interface {
     I{{ $tableNameCamel }}RepositoryQueryBuilder
@@ -168,7 +175,7 @@ func ({{ $shortName }} *{{ $tableNameCamel }}Repository) FindAll{{ $tableNameCam
         }
     {{- range .Table.Columns }}
         {{- if ne .ColumnName "active" }}
-            if qb, err = addFilter(qb, "{{ `$.Table.TableName` }}.`{{ .ColumnName }}`", filter.{{ camelCase .ColumnName }} }); err != nil {
+            if qb, err = addFilter(qb, "{{ `$.Table.TableName` }}.`{{ .ColumnName }}`", filter.{{ camelCase .ColumnName }}); err != nil {
                 return qb, err
             }
         {{- end }}

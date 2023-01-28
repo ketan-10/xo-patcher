@@ -49,7 +49,11 @@ func (lt *LoaderImp) LoadSchema(args *Args) error {
 
 	fmt.Println("Loading repo..")
 
-	err = lt.loadRepository(args, tables)
+	tableRelations, err := lt.loadRepository(args, tables)
+	if err != nil {
+		return err
+	}
+	err = args.ExecuteTemplate(templates.WIRE, "wire.xo", tableRelations)
 	if err != nil {
 		return err
 	}
@@ -70,18 +74,18 @@ type TableRelation struct {
 	ForeignKeys []*models.ForeignKey
 }
 
-func (lt *LoaderImp) loadRepository(args *Args, tables []*TableDTO) error {
+func (lt *LoaderImp) loadRepository(args *Args, tables []*TableDTO) ([]*TableRelation, error) {
 
 	res := []*TableRelation{}
 
 	for _, table := range tables {
 		indexes, err := lt.IndexList(args.DB, args.DatabaseName, table.TableName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		foreignKeys, err := lt.ForeignKeysList(args.DB, args.DatabaseName, table.TableName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		tableRelation := &TableRelation{
 			Table:       table,
@@ -90,11 +94,11 @@ func (lt *LoaderImp) loadRepository(args *Args, tables []*TableDTO) error {
 		}
 		err = args.ExecuteTemplate(templates.REPO, table.TableName+"_repository", tableRelation)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		res = append(res, tableRelation)
 	}
-	return nil
+	return res, nil
 }
 
 type TableDTO struct {

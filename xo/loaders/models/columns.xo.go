@@ -76,9 +76,13 @@ func MySqlColumns(db XODB, databaseName string, tableName string) ([]*Column, er
 
 func parseSQL2GoType(c Column) string {
 	if c.IsEnum {
-		return snaker.SnakeToCamel(c.TableName + "_" + c.ColumnName)
+		return "enum." + snaker.SnakeToCamel(c.TableName + "_" + c.ColumnName)
 	}
-	dt, precision, _ := parsePrecision(c.DataType)
+	// remove unsigned
+	dt := strings.TrimSuffix(c.DataType, " unsigned")
+	
+	dt, precision, _ := parsePrecision(dt)
+
 
 	var nilVal, typ string
 	nullable := !c.NotNullable

@@ -1,6 +1,13 @@
 {{- $name := joinWith "_" .TableName .ColumnName -}}
 {{ $camelName := camelCase $name }}
 {{- $shortName := shortName $camelName -}}
+package enum
+
+import (
+    sq "github.com/elgris/sqrl"
+    "github.com/jmoiron/sqlx"
+    "github.com/pkg/errors"
+)
 
 type {{ $camelName }} uint16
 
