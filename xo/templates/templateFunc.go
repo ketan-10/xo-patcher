@@ -8,7 +8,9 @@ import (
 )
 
 var HelperFunc template.FuncMap = template.FuncMap{
-	"camelCase": snaker.SnakeToCamel,
+	"camelCase": func(input string) string {
+		return snaker.SnakeToCamel(strings.ReplaceAll(input, "/[^a-zA-Z0-9]/g", "_"))
+	},
 	"joinWith":  joinWith,
 	"shortName": shortName,
 }

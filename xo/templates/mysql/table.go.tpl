@@ -3,7 +3,6 @@ package table
 
 import (
     sq "github.com/elgris/sqrl"
-    "github.com/jmoiron/sqlx"
     "github.com/pkg/errors"
 )
 
@@ -19,7 +18,7 @@ type {{ $tableNameCamel }} struct {
 
 type {{ $tableNameCamel }}Filter struct {
 {{- range .Columns}}
-    {{ camelCase .ColumnName }} FilterOnField 
+    {{ camelCase .ColumnName }} internal.FilterOnField 
 {{- end }}
     Wheres []sq.Sqlizer
     Joins []sq.Sqlizer
@@ -48,13 +47,14 @@ func (f *{{ $tableNameCamel }}Filter) IsNil() bool {
 }
 
 {{- range .Columns}}
-func (f *{{ $tableNameCamel }}Filter) Add{{ camelCase .ColumnName }}(filterType FilterType, v interface{}) {
-    f.{{camelCase .ColumnName }} = append(f.{{camelCase .ColumnName }}, map[filterType]interface{}{filterType: v})
+func (f *{{ $tableNameCamel }}Filter) Add{{ camelCase .ColumnName }}(filterType internal.FilterType, v interface{}) {
+    f.{{camelCase .ColumnName }} = append(f.{{camelCase .ColumnName }}, map[internal.FilterType]interface{}{filterType: v})
 }
 {{- end }}
 
 func (f *{{ $tableNameCamel }}Filter) Where(v sq.Sqlizer) *{{ $tableNameCamel }}Filter {
     f.Wheres = append(f.Wheres, v)
+    return f
 }
 
 
@@ -101,7 +101,7 @@ type {{ $tableNameCamel }}Update struct {
 func (u *{{ $tableNameCamel }}Update) To{{ $tableNameCamel }}Create() (res {{ $tableNameCamel }}Create, err error) {
 {{- range .Columns}}
 {{- if eq .IsGenerated false }}
-    if {{ camelCase .ColumnName }} != nil {
+    if u.{{ camelCase .ColumnName }} != nil {
         res.{{ camelCase .ColumnName }} = *u.{{ camelCase .ColumnName }}
     }
     {{- if eq .NotNullable true -}} 
@@ -111,6 +111,7 @@ func (u *{{ $tableNameCamel }}Update) To{{ $tableNameCamel }}Create() (res {{ $t
     {{- end -}}
 {{- end -}}
 {{- end }}
+    return res, nil
 }
 
 type List{{ $tableNameCamel }} struct {

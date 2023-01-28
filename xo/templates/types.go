@@ -6,7 +6,7 @@ const (
 	ENUM TemplateType = iota
 	TABLE
 	REPO
-	WIRE
+	XO_WIRE
 )
 
 func (tt *TemplateType) String() string {
@@ -17,8 +17,8 @@ func (tt *TemplateType) String() string {
 		return "table"
 	case REPO:
 		return "repo"
-	case WIRE:
-		return "wire"
+	case XO_WIRE:
+		return "xo_wire"
 	}
 
 	return ""

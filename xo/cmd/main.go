@@ -58,7 +58,7 @@ func generateFiles(args *internal.Args) {
 		if _, err := os.Stat(dirName); os.IsNotExist(err) {
 			os.MkdirAll(dirName, os.ModeDir)
 		}
-		file, err := os.Create(dirName + "/" + gen.FileName + "")
+		file, err := os.Create(dirName + "/" + gen.FileName + ".go")
 		if err != nil {
 			panic(err)
 		}

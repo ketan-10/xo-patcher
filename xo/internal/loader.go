@@ -53,7 +53,7 @@ func (lt *LoaderImp) LoadSchema(args *Args) error {
 	if err != nil {
 		return err
 	}
-	err = args.ExecuteTemplate(templates.WIRE, "wire.xo", tableRelations)
+	err = args.ExecuteTemplate(templates.XO_WIRE, "wire.xo", tableRelations)
 	if err != nil {
 		return err
 	}

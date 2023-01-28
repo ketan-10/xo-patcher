@@ -1,4 +1,8 @@
-package wire
+package xo_wire
+
+import (
+	"github.com/google/wire"
+)
 
 var RepositorySet = wire.NewSet(
     {{ range . }}
