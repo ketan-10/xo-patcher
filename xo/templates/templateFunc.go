@@ -2,14 +2,17 @@ package templates
 
 import (
 	"html/template"
+	"regexp"
 	"strings"
 
 	"github.com/kenshaw/snaker"
 )
 
+var removeSpecialChar = regexp.MustCompile(`[^a-zA-Z0-9]`)
+
 var HelperFunc template.FuncMap = template.FuncMap{
 	"camelCase": func(input string) string {
-		return snaker.SnakeToCamel(strings.ReplaceAll(input, "/[^a-zA-Z0-9]/g", "_"))
+		return snaker.SnakeToCamel(removeSpecialChar.ReplaceAllLiteralString(input, "_"))
 	},
 	"joinWith":  joinWith,
 	"shortName": shortName,
@@ -30,6 +33,9 @@ func shortName(name string) string {
 
 	if len(short) == 0 {
 		short = strings.ToLower(name[0:1])
+	}
+	if short == "er" || short == "err" || short == "va" || short == "var" {
+		short = short + "_"
 	}
 	return short
 }

@@ -1,5 +1,13 @@
 {{- $tableNameCamel := camelCase .Table.TableName -}}
 {{- $shortName := shortName $tableNameCamel -}}
+
+{{- $idType := "int" }}
+{{- range .Table.Columns }}
+    {{- if eq .ColumnName "id" }}
+        {{- $idType = .GoType }}
+    {{- end}}
+{{- end }}
+
 package repo
 
 import (
@@ -15,11 +23,11 @@ type I{{ $tableNameCamel }}Repository interface {
     Insert{{ $tableNameCamel }}WithSuffix(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}Create, suffix sq.Sqlizer) (*table.{{ $tableNameCamel }}, error)
     Insert{{ $tableNameCamel }}IDResult(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}Create, suffix sq.Sqlizer) (int64, error)
 
-    Update{{ $tableNameCamel }}ByFields(ctx context.Context, id int, {{ $shortName }} table.{{ $tableNameCamel }}Update) (*table.{{ $tableNameCamel }}, error)
+    Update{{ $tableNameCamel }}ByFields(ctx context.Context, id {{ $idType }}, {{ $shortName }} table.{{ $tableNameCamel }}Update) (*table.{{ $tableNameCamel }}, error)
     Update{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}) (*table.{{ $tableNameCamel }}, error)
     
     Delete{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}) error
-    Delete{{ $tableNameCamel }}ByID(ctx context.Context, id int) (bool, error)
+    Delete{{ $tableNameCamel }}ByID(ctx context.Context, id {{ $idType }}) (bool, error)
     
     FindAll{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}Filter, pagination *internal.Pagination) (table.List{{ $tableNameCamel }}, error)
     FindAll{{ $tableNameCamel }}WithSuffix(ctx context.Context,{{ $shortName }} table.{{ $tableNameCamel }}Filter, pagination *internal.Pagination, suffixes ...sq.Sqlizer) (table.List{{ $tableNameCamel }}, error)
@@ -33,7 +41,7 @@ type I{{ $tableNameCamel }}RepositoryQueryBuilder interface {
 }
 
 type {{ $tableNameCamel }}Repository struct {
-    DB db_manager.IDb
+    DB internal.IDb
     QueryBuilder I{{ $tableNameCamel }}RepositoryQueryBuilder
 }
 
@@ -105,7 +113,7 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Insert{{ $tableNameCam
     return id, nil
 } 
 
-func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Update{{ $tableNameCamel }}ByFields(ctx context.Context, id int, {{ $shortName }} table.{{ $tableNameCamel }}Update) (*table.{{ $tableNameCamel }}, error) {
+func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Update{{ $tableNameCamel }}ByFields(ctx context.Context, id {{ $idType }}, {{ $shortName }} table.{{ $tableNameCamel }}Update) (*table.{{ $tableNameCamel }}, error) {
     var err error 
 
     updateMap := map[string]interface{}{}
@@ -142,7 +150,7 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Delete{{ $tableNameCam
 }
 
 
-func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Delete{{ $tableNameCamel }}ByID(ctx context.Context, id int) (bool, error) {
+func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Delete{{ $tableNameCamel }}ByID(ctx context.Context, id {{ $idType }}) (bool, error) {
     var err error
 
     qb := sq.Update("`{{ .Table.TableName }}`").Set("active", false)
@@ -164,26 +172,31 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}RepositoryQueryBuilder) FindAll{{ 
     var err error
     qb := sq.Select(fields).From("`{{ .Table.TableName }}`")
     if filter != nil {
-        if filter.Active == nil {
-            if qb, err = internal.AddFilter(qb, "`{{ .Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
-                return qb, err
-            }
-        } else {
-            if qb, err = internal.AddFilter(qb, "`{{ .Table.TableName }}`.`active`", filter.Active); err != nil {
-                return qb, err
-            }
-        }
     {{- range .Table.Columns }}
-        {{- if ne .ColumnName "active" }}
+        {{- if eq .ColumnName "active" }}
+            if filter.Active == nil {
+                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
+                    return qb, err
+                }
+            } else {
+                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", filter.Active); err != nil {
+                    return qb, err
+                }
+            }
+        {{- else }}
             if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`{{ .ColumnName }}`", filter.{{ camelCase .ColumnName }}); err != nil {
                 return qb, err
             }
         {{- end }}
     {{- end }}
     } else {
-        if qb, err = internal.AddFilter(qb, "`{{ .Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
-            return qb, err
-        }
+        {{- range .Table.Columns }}
+            {{- if eq .ColumnName "active" }}
+                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
+                    return qb, err
+                }
+            {{- end }}
+        {{- end }}
     }
 
     for _, suffix := range suffixes {
