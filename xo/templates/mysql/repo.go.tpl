@@ -12,7 +12,6 @@ package repo
 
 import (
     sq "github.com/elgris/sqrl"
-    "github.com/pkg/errors"
     "github.com/google/wire"
 )
 
@@ -29,8 +28,8 @@ type I{{ $tableNameCamel }}Repository interface {
     Delete{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}) error
     Delete{{ $tableNameCamel }}ByID(ctx context.Context, id {{ $idType }}) (bool, error)
     
-    FindAll{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}Filter, pagination *internal.Pagination) (table.List{{ $tableNameCamel }}, error)
-    FindAll{{ $tableNameCamel }}WithSuffix(ctx context.Context,{{ $shortName }} table.{{ $tableNameCamel }}Filter, pagination *internal.Pagination, suffixes ...sq.Sqlizer) (table.List{{ $tableNameCamel }}, error)
+    FindAll{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} *table.{{ $tableNameCamel }}Filter, pagination *internal.Pagination) (table.List{{ $tableNameCamel }}, error)
+    FindAll{{ $tableNameCamel }}WithSuffix(ctx context.Context,{{ $shortName }} *table.{{ $tableNameCamel }}Filter, pagination *internal.Pagination, suffixes ...sq.Sqlizer) (table.List{{ $tableNameCamel }}, error)
 
 }
 
@@ -67,7 +66,7 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Insert{{ $tableNameCam
         return nil, err
     }
     new{{ $shortName }} := table.{{ $tableNameCamel }}{}
-    qb := sq.Select("*").From(` {{ .Table.TableName }}`)
+    qb := sq.Select("*").From(`{{ .Table.TableName }}`)
 
     qb.Where(sq.Eq{"`id`": id})
     err = {{ $shortName }}r.DB.Get(ctx, &new{{ $shortName }}, qb)
@@ -81,7 +80,7 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Insert{{ $tableNameCam
 func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Insert{{ $tableNameCamel }}IDResult(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}Create, suffix sq.Sqlizer) (int64, error) {
     var err error
 
-    qb := sq.Insert("`{{ $tableNameCamel }}`").Columns(
+    qb := sq.Insert("`{{ .Table.TableName }}`").Columns(
         {{- range .Table.Columns }}
             "`{{ .ColumnName }}`",
         {{- end }}
@@ -144,6 +143,38 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Update{{ $tableNameCam
 
 }
 
+
+func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Update{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}) (*table.{{ $tableNameCamel }}, error) {
+    var err error
+
+    // sql query
+    qb := sq.Update("`{{ .Table.TableName }}`").SetMap(map[string]interface{}{
+    {{- range .Table.Columns }}
+        {{- if ne .ColumnName "id" }}
+        "`{{ .ColumnName }}`": {{ $shortName }}.{{ camelCase .ColumnName }},
+        {{- end }}
+    {{- end }}
+    }).Where(sq.Eq{"`id`": {{ $shortName }}.ID})
+
+    // run query
+    _, err = {{ $shortName }}r.DB.Exec(ctx, qb)
+    if err != nil {
+        return nil, err
+    }
+
+    selectQb := sq.Select("*").From("`{{ .Table.TableName }}`")
+    selectQb = selectQb.Where(sq.Eq{"`id`": {{ $shortName }}.ID})
+    
+    result := table.{{ $tableNameCamel }}{}
+    err = {{ $shortName }}r.DB.Get(ctx, &result, selectQb)
+    if err != nil {
+        return nil, err
+    }
+
+    return &result, nil
+}
+
+
 func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Delete{{ $tableNameCamel }}(ctx context.Context, {{ $shortName }} table.{{ $tableNameCamel }}) (error) {
     _, err := {{ $shortName }}r.Delete{{ $tableNameCamel }}ByID(ctx, {{ $shortName }}.ID)
     return err
@@ -189,15 +220,15 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}RepositoryQueryBuilder) FindAll{{ 
             }
         {{- end }}
     {{- end }}
-    } else {
-        {{- range .Table.Columns }}
-            {{- if eq .ColumnName "active" }}
-                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
-                    return qb, err
-                }
-            {{- end }}
-        {{- end }}
     }
+    {{- range .Table.Columns }}
+        {{- if eq .ColumnName "active" }} else {
+            if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
+                return qb, err
+            }
+        }
+        {{- end }}
+    {{- end }}
 
     for _, suffix := range suffixes {
         query, args, err := suffix.ToSql()
