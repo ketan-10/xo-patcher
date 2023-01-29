@@ -51,7 +51,7 @@ func FilterOnFieldToSqlizer(columnName string, filterOnField FilterOnField) (sq.
 	}
 	return and, nil
 }
-
+// Pagination
 type Pagination struct {
 	Page       *int
 	PerPage    *int
