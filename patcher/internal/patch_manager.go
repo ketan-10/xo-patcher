@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/google/wire"
 )
@@ -49,7 +48,7 @@ func (pm *PatchManager) RegisterPatch(name string, runner IPatchRunner) error {
 }
 
 func (pm *PatchManager) Run(ctx context.Context, name string) error {
-	fmt.Println("Running Patch Manager")
+	// close file after run completed
 	defer pm.FileGen.Close()
 	if runner, ok := pm.patchList[name]; ok {
 		return WrapInTransaction(ctx, pm.DB, func(ctx context.Context) error {

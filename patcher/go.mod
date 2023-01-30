@@ -10,4 +10,8 @@ require (
 	github.com/pkg/errors v0.9.1
 )
 
-require github.com/stretchr/testify v1.7.0 // indirect
+require (
+	github.com/huandu/go-sqlbuilder v1.19.0 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/stretchr/testify v1.7.0 // indirect
+)

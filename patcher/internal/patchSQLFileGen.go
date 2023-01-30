@@ -3,11 +3,11 @@ package internal
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/elgris/sqrl"
 	"github.com/google/wire"
+	interpolater "github.com/huandu/go-sqlbuilder"
 	"github.com/ketan-10/xo-patcher/patcher/utils"
 )
 
@@ -43,10 +43,14 @@ func (fileGen *PatchSQLFileGen) Write(sqlizer sqrl.Sqlizer) error {
 	if err != nil {
 		return err
 	}
-	
-	fileGen.file.WriteString(fmt.Sprintf(query, args...))
-	fmt.Println(args)
-	// fileGen.file.WriteString(args)
+	query, err = interpolater.MySQL.Interpolate(query, args)
+	if err != nil {
+		return err
+	}
+	_, err = fileGen.file.WriteString(query + ";\n")
+	if err != nil {
+		return err
+	}
 	return nil
 
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 
 	"github.com/ketan-10/xo-patcher/patcher/utils"
 	"github.com/ketan-10/xo-patcher/patcher/wire_app"
@@ -16,7 +15,6 @@ var connectionStringFlag = flag.String("connection", "", "database connection st
 func main() {
 
 	flag.Parse()
-	fmt.Println("Hello World")
 
 	connectionString := *connectionStringFlag
 	patchName := *patchNameFlag
@@ -26,9 +24,6 @@ func main() {
 	if patchName == "" {
 		panic("patch-name flag must be provided")
 	}
-
-	fmt.Println(connectionString)
-
 	commit := *commitFlag
 
 	ctx := context.WithValue(context.Background(), utils.Connection, connectionString)
