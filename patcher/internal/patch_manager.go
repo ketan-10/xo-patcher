@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/wire"
 )
@@ -16,17 +17,28 @@ type IPatchManager interface {
 	RegisterPatch(name string, runner IPatchRunner) error
 }
 
+type PatchManageOptions struct {
+	DB      IDb
+	FileGen IPatchSQLFileGen
+}
+
 type PatchManager struct {
+	*PatchManageOptions
 	patchList map[string]IPatchRunner
 }
 
-func InitPatchManager() *PatchManager {
+func InitPatchManager(options *PatchManageOptions) *PatchManager {
 	return &PatchManager{
-		patchList: map[string]IPatchRunner{},
+		PatchManageOptions: options,
+		patchList:          map[string]IPatchRunner{},
 	}
 }
 
-var NerPatchManager = wire.NewSet(InitPatchManager, wire.Bind(new(IPatchManager), new(PatchManager)))
+var NewPatchManager = wire.NewSet(
+	wire.Struct(new(PatchManageOptions), "*"),
+	InitPatchManager,
+	wire.Bind(new(IPatchManager), new(PatchManager)),
+)
 
 func (pm *PatchManager) RegisterPatch(name string, runner IPatchRunner) error {
 	if _, ok := pm.patchList[name]; ok {
@@ -37,9 +49,12 @@ func (pm *PatchManager) RegisterPatch(name string, runner IPatchRunner) error {
 }
 
 func (pm *PatchManager) Run(ctx context.Context, name string) error {
+	fmt.Println("Running Patch Manager")
+	defer pm.FileGen.Close()
 	if runner, ok := pm.patchList[name]; ok {
-		runner.Run(ctx)
-		return nil
+		return WrapInTransaction(ctx, pm.DB, func(ctx context.Context) error {
+			return runner.Run(ctx)
+		})
 	}
 	return errors.New("patch by name: " + name + " not found")
 }

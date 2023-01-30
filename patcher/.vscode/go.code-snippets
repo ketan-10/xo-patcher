@@ -1,0 +1,47 @@
+{
+    "Init Patch": {
+        "prefix": [
+            "init"
+        ],
+        "body": [
+            "package patches",
+            "",
+            "import (",
+            "   \"context\"",
+            "   \"github.com/google/wire\"",
+            "   \"github.com/ketan-10/xo-patcher/patcher/internal\"",
+            ")",
+            "",
+            "type I${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} interface {",
+            "}",
+            "",
+            "type ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Options struct {",
+            "   PatchManager internal.IPatchManager",
+            "}",
+            "",
+            "type ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} struct {",
+            "   *${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Options",
+            "}",
+            "",
+            "var New${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} = wire.NewSet(",
+            "   wire.Struct(new(${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Options), \"*\"),",
+            "   Init${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/},",
+            "   wire.Bind(new(I${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}), new(${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/})),",
+            ")",
+            "",
+            "func Init${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}(options *${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Options) (*${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}, error) {",
+            "   ${TM_FILENAME_BASE/(.*)/${1:/camelcase}/} := &${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}{${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Options: options}",
+            "   err := options.PatchManager.RegisterPatch(\"${TM_FILENAME_BASE}\", ${TM_FILENAME_BASE/(.*)/${1:/camelcase}/})",
+            "   return ${TM_FILENAME_BASE/(.*)/${1:/camelcase}/}, err",
+            "}",
+            "",
+            "func (${TM_FILENAME_BASE/(.*)/${1:/camelcase}/} *${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}) Run(ctx context.Context) error {",
+            "   return nil",
+            "}",
+            "",
+
+        ],
+        "description": "Init Data Patch Template",
+        "scope": "go"
+    }
+}

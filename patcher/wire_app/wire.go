@@ -4,6 +4,7 @@
 package wire_app
 
 import (
+	"context"
 	"github.com/google/wire"
 	"github.com/ketan-10/xo-patcher/patcher/internal"
 	"github.com/ketan-10/xo-patcher/patcher/patches"
@@ -23,18 +24,21 @@ type PatchGroup struct {
 }
 
 type App struct {
-	PatchGroup PatchGroup
+	PatchGroup   PatchGroup
+	PatchManager internal.IPatchManager
 }
 
 var globalSet = wire.NewSet(
 	xo_wire.RepositorySet,
 	wire.Struct(new(App), "*"),
 	wire.Struct(new(PatchGroup), "*"),
-	internal.NerPatchManager,
+	internal.NewPatchManager,
 	patchSet,
+	internal.NewDB,
+	internal.NewPatchSQLFileGen,
 )
 
-func GetApp() (*App, func(), error) {
+func GetApp(ctx context.Context) (*App, func(), error) {
 	wire.Build(globalSet)
 	return &App{}, nil, nil
 }

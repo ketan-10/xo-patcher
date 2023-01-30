@@ -3,19 +3,52 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"log"
 
 	"github.com/elgris/sqrl"
+	"github.com/google/wire"
 	"github.com/jmoiron/sqlx"
+	"github.com/ketan-10/xo-patcher/patcher/utils"
 )
 
 type IDb interface {
 	Select(ctx context.Context, dest interface{}, sqlizer sqrl.Sqlizer) error
 	Get(ctx context.Context, dest interface{}, sqlizer sqrl.Sqlizer) error
 	Exec(ctx context.Context, sqlizer sqrl.Sqlizer) (sql.Result, error)
+	BeginTxx(ctx context.Context) (*sqlx.Tx, error)
+}
+
+type DBOptions struct {
+	FileGen IPatchSQLFileGen
 }
 
 type DB struct {
+	*DBOptions
 	DB *sqlx.DB
+}
+
+var NewDB = wire.NewSet(
+	wire.Struct(new(DBOptions), "*"),
+	OpenConnection,
+	wire.Bind(new(IDb), new(DB)),
+)
+
+func OpenConnection(ctx context.Context, options *DBOptions) *DB {
+
+	connection, err := getConnectionContext(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Attempting connection")
+	
+	sqlxDB, err := sqlx.Open("mysql", connection)
+	if err != nil {
+		fmt.Println(connection)
+		log.Fatal(err)
+	}
+	return &DB{DBOptions: options, DB: sqlxDB}
 }
 
 func (db *DB) Get(ctx context.Context, dest interface{}, sqlizer sqrl.Sqlizer) error {
@@ -47,6 +80,9 @@ func (db *DB) Select(ctx context.Context, dest interface{}, sqlizer sqrl.Sqlizer
 }
 
 func (db *DB) Exec(ctx context.Context, sqlizer sqrl.Sqlizer) (sql.Result, error) {
+
+	db.FileGen.Write(sqlizer)
+
 	query, args, err := sqlizer.ToSql()
 	if err != nil {
 		return nil, err
@@ -58,4 +94,69 @@ func (db *DB) Exec(ctx context.Context, sqlizer sqrl.Sqlizer) (sql.Result, error
 		return nil, err
 	}
 	return res, nil
+}
+
+func (db *DB) BeginTxx(ctx context.Context) (*sqlx.Tx, error) {
+	return db.DB.BeginTxx(ctx, nil)
+}
+
+// Transaction
+
+type key string
+
+const TransactionKey key = "transaction_key"
+
+func WrapInTransaction(ctx context.Context, db IDb, f func(ctx context.Context) error) error {
+
+	// if transaction already exists
+	tx := getTransactionContext(ctx)
+	if tx != nil {
+		return f(ctx)
+	}
+
+	tx, err := db.BeginTxx(ctx)
+	if err != nil {
+		return err
+	}
+
+	// handle traction
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			fmt.Println("Rollback due to error")
+			panic(r)
+		}
+		if getCommitContext(ctx) {
+			tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
+
+	// save tx for next time. if same connection. Maybe not needed for xo-patcher 🤔
+	newContext := context.WithValue(ctx, TransactionKey, tx)
+	return f(newContext)
+}
+
+// Get Contexts
+
+func getTransactionContext(ctx context.Context) *sqlx.Tx {
+	if tx, ok := ctx.Value(TransactionKey).(*sqlx.Tx); ok {
+		return tx
+	}
+	return nil
+}
+
+func getConnectionContext(ctx context.Context) (string, error) {
+	if value, ok := ctx.Value(utils.Connection).(string); ok {
+		return value, nil
+	}
+	return "", errors.New("connection context invalid")
+}
+
+func getCommitContext(ctx context.Context) bool {
+	if value, ok := ctx.Value(utils.Commit).(bool); ok {
+		return value
+	}
+	return false
 }
