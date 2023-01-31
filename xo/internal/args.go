@@ -12,7 +12,7 @@ import (
 
 type Args struct {
 	// DBC is database connection string
-	DBC          string               `arg:"-"`
+	DBC          string               `arg:"--connection,required"`
 	DB           *sql.DB              `arg:"-"`
 	Loader       ILoader              `arg:"-"`
 	LoaderType   LoaderType           `arg:"-"`
@@ -21,10 +21,9 @@ type Args struct {
 	Generated    []*GeneratedTemplate `arg:"-"`
 }
 
-func GetDefaultArgs(connection string) *Args {
+func GetDefaultArgs() *Args {
 	return &Args{
 		GeneratedDir: "xo_gen",
-		DBC:          connection,
 	}
 }
 

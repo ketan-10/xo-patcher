@@ -219,6 +219,10 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}RepositoryQueryBuilder) FindAll{{ 
                 return qb, err
             }
         {{- end }}
+        qb, err = addAdditionalFilter(qb, filter.Wheres, filter.Joins, filter.LeftJoins, filter.GroupBys, filter.Havings)
+        if err != nil {
+            return qb, err
+        }
     {{- end }}
     }
     {{- range .Table.Columns }}

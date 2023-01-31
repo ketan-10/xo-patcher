@@ -14,12 +14,12 @@ import (
 )
 
 
-func Execute(connection string) {
+func Execute() {
 
 	var err error
 	fmt.Println("Started")
 
-	args := internal.GetDefaultArgs(connection)
+	args := internal.GetDefaultArgs()
 
 	// validate Args
 	arg.MustParse(args)
