@@ -49,6 +49,10 @@ func FilterOnFieldToSqlizer(columnName string, filterOnField FilterOnField) (sq.
 			}
 		}
 	}
+	// If nil is not returned here. in fun AddFilter the queryBuilder will add "WHERE" string to query even though there was no filter. 
+	if and == nil {
+		return nil, nil
+	}
 	return and, nil
 }
 

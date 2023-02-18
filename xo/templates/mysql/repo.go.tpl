@@ -122,7 +122,7 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}Repository) Update{{ $tableNameCam
         }
     {{- end }}
 
-    qb := sq.Update(`{{ $tableNameCamel  }}`).SetMap(updateMap).Where(sq.Eq{"`id`": id})
+    qb := sq.Update(`{{ .Table.TableName }}`).SetMap(updateMap).Where(sq.Eq{"`id`": id})
 
     _, err = {{ $shortName }}r.DB.Exec(ctx, qb)
     if err != nil {
@@ -203,27 +203,27 @@ func ({{ $shortName }}r *{{ $tableNameCamel }}RepositoryQueryBuilder) FindAll{{ 
     var err error
     qb := sq.Select(fields).From("`{{ .Table.TableName }}`")
     if filter != nil {
-    {{- range .Table.Columns }}
-        {{- if eq .ColumnName "active" }}
-            if filter.Active == nil {
-                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
+        {{- range .Table.Columns }}
+            {{- if eq .ColumnName "active" }}
+                if filter.Active == nil {
+                    if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", internal.FilterOnField{ {internal.Eq: true} }); err != nil {
+                        return qb, err
+                    }
+                } else {
+                    if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", filter.Active); err != nil {
+                        return qb, err
+                    }
+                }
+            {{- else }}
+                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`{{ .ColumnName }}`", filter.{{ camelCase .ColumnName }}); err != nil {
                     return qb, err
                 }
-            } else {
-                if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`active`", filter.Active); err != nil {
-                    return qb, err
-                }
-            }
-        {{- else }}
-            if qb, err = internal.AddFilter(qb, "`{{ $.Table.TableName }}`.`{{ .ColumnName }}`", filter.{{ camelCase .ColumnName }}); err != nil {
-                return qb, err
-            }
+            {{- end }}
         {{- end }}
         qb, err = internal.AddAdditionalFilter(qb, filter.Wheres, filter.Joins, filter.LeftJoins, filter.GroupBys, filter.Havings)
         if err != nil {
             return qb, err
         }
-    {{- end }}
     }
     {{- range .Table.Columns }}
         {{- if eq .ColumnName "active" }} else {
