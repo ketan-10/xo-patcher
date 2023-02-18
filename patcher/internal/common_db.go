@@ -51,6 +51,48 @@ func FilterOnFieldToSqlizer(columnName string, filterOnField FilterOnField) (sq.
 	}
 	return and, nil
 }
+
+func AddAdditionalFilter(qb *sq.SelectBuilder, wheres, joins, leftJoins []sq.Sqlizer, groupBys []string, havings []sq.Sqlizer) (*sq.SelectBuilder, error) {
+	
+	for _, where := range wheres {
+		query, args, err := where.ToSql()
+		if err != nil {
+			return qb, err
+		}
+		qb = qb.Where(query, args...)
+	}
+	
+	for _, join := range joins {
+		query, args, err := join.ToSql()
+		if err != nil {
+			return qb, err
+		}
+		qb = qb.Join(query, args...)
+	}
+	
+	for _, leftJoin := range leftJoins {
+		query, args, err := leftJoin.ToSql()
+		if err != nil {
+			return qb, err
+		}
+		qb = qb.LeftJoin(query, args...)
+	}
+	
+	if groupBys != nil {
+			qb = qb.GroupBy(groupBys...)
+	}
+	
+	for _, item := range havings {
+		query, args, err := item.ToSql()
+		if err != nil {
+			return qb, err
+		}
+		qb = qb.Having(query, args...)
+	}
+	
+	return qb, nil
+}
+
 // Pagination
 type Pagination struct {
 	Page       *int
