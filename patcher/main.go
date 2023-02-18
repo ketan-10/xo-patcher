@@ -36,6 +36,9 @@ func main() {
 		panic(err)
 	}
 
-	app.PatchManager.Run(ctx, patchName)
+	err = app.PatchManager.Run(ctx, patchName)
+	if err != nil {
+		panic(err)
+	}
 
 }

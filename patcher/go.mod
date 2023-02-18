@@ -8,7 +8,7 @@ require (
 	github.com/google/wire v0.2.2-0.20190328160020-65ae46b7eaa1
 	github.com/huandu/go-sqlbuilder v1.19.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/ketan-10/xo-patcher/xo v0.0.0-20230131042618-6eb8fd019bfe
+	github.com/ketan-10/xo-patcher/xo v0.0.0-20230218162458-c4f3a04b1af6
 	github.com/pkg/errors v0.9.1
 )
 

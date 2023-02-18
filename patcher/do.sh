@@ -112,7 +112,8 @@ run() {
     pass=$1_p
     user=$1_u
     port=$1_port
-    go run main.go --connection="mysql://${!user}:${!pass}@127.0.0.1:${!port}/$2?charset=utf8mb4&parseTime=true"
+    connection=$(echo "${!user}:${!pass}@tcp(127.0.0.1:${!port})/$2?charset=utf8mb4&parseTime=true" | tr -d '\r')
+    go run main.go --connection="$connection" ${@:3}
 }
 
 
@@ -131,10 +132,11 @@ xo() {
     eval $(cat .env)
     connection=$(echo "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@127.0.0.1:${MYSQL_PORT}/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=true" | tr -d '\r')
     go run ./tools/xo/main.go --connection="$connection"
+    # go run github.com/ketan-10/xo-patcher/xo --connection="$connection"
 }
 
 if [[ $1 = 'run' ]]; then
-    run $2 $3
+    run $2 $3 ${@:4}
 elif [[ $1 = 'runLocal' ]]; then
     runlocal ${@:2}
 elif [[ $1 = 'wire' ]]; then
