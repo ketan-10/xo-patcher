@@ -87,6 +87,12 @@ func (db *DB) Select(ctx context.Context, dest interface{}, sqlizer sqrl.Sqlizer
 
 func (db *DB) Exec(ctx context.Context, sqlizer sqrl.Sqlizer) (sql.Result, error) {
 
+	// If prod don't attempt exec, just write to file
+	if getProdContext(ctx) {
+		err := db.FileGen.Write(sqlizer)
+		return nil, err
+	}
+
 	query, args, err := sqlizer.ToSql()
 	if err != nil {
 		return nil, err
@@ -104,9 +110,9 @@ func (db *DB) Exec(ctx context.Context, sqlizer sqrl.Sqlizer) (sql.Result, error
 	}
 
 	// write to file if query was successful
-	db.FileGen.Write(sqlizer)
+	err = db.FileGen.Write(sqlizer)
 
-	return res, nil
+	return res, err
 }
 
 func (db *DB) BeginTxx(ctx context.Context) (*sqlx.Tx, error) {
@@ -169,6 +175,13 @@ func getConnectionContext(ctx context.Context) (string, error) {
 
 func getCommitContext(ctx context.Context) bool {
 	if value, ok := ctx.Value(utils.Commit).(bool); ok {
+		return value
+	}
+	return false
+}
+
+func getProdContext(ctx context.Context) bool {
+	if value, ok := ctx.Value(utils.Prod).(bool); ok {
 		return value
 	}
 	return false

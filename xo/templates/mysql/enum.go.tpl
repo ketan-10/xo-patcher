@@ -29,4 +29,38 @@ func ({{ $shortName }} {{ $camelName }}) GoString() string {
 }
 
 
+// UnmarshalText unmarshals {{ $camelName }} from text.
+func ({{ $shortName }} *{{ $camelName }}) UnmarshalText(text []byte) error {
+	switch string(text)	{
 
+{{- range .Values }}
+	case "{{.}}":
+		*{{ $shortName }} = {{ $camelName -}}{{- camelCase . }}
+{{ end }}
+
+	default:
+		return errors.New("ErrInvalidEnumGraphQL_{{ $camelName }}")
+	}
+
+	return nil
+}
+
+// Value satisfies the sql/driver.Valuer interface for {{ $camelName }}.
+func ({{ $shortName }} {{ $camelName }}) Value() (driver.Value, error) {
+	return {{ $shortName }}.String(), nil
+}
+
+// Value satisfies the sql/driver.Valuer interface for {{ $camelName }}.
+func ({{ $shortName }} {{ $camelName }}) Ptr() *{{ $camelName }} {
+	return &{{ $shortName }}
+}
+
+// Scan satisfies the database/sql.Scanner interface for {{ $camelName }}.
+func ({{ $shortName }} *{{ $camelName }}) Scan(src interface{}) error {
+	buf, ok := src.([]byte)
+	if !ok {
+	   return errors.New("ErrInvalidEnumScan_{{ $camelName }}")
+	}
+
+	return {{ $shortName }}.UnmarshalText(buf)
+}
