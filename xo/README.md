@@ -2,7 +2,8 @@
 
 - [When should I use a pointer to an interface?](https://www.reddit.com/r/golang/comments/kit3da/whats_the_meaning_of_a_pointer_to_an_interface/)
 
-- 
+- [Prime Reacts: The Flaws of Inheritance](https://youtu.be/HOSdPhAKupw) <- How this can relate to MySQL loader and LoderImp architecture
+
 i) args: a object we pass around and collect data.
 ii) loaderImp: a single implementation of loader
   - for each sql driver we create different object.
