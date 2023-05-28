@@ -26,6 +26,7 @@ function parse_yaml {
 }
 
 eval $(parse_yaml config.yml)
+source .env
 
 validate() {
     IFS="|"
